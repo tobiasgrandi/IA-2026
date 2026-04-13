@@ -86,7 +86,7 @@ for graph_search in [False, True]:
         if alg_name == 'DFS' and not graph_search:
             results.append({
                 "algorithm": alg_name,
-                "mode": "Sin repetidos" if not graph_search else "Repetidos",
+                "mode": "Con repetidos" if not graph_search else "Ignorando repetidos",
                 "time": float("inf")
             })
             continue
@@ -96,7 +96,7 @@ for graph_search in [False, True]:
             end = time.perf_counter()
             results.append({
                 "algorithm": alg_name,
-                "mode": "Sin repetidos" if not graph_search else "Repetidos",
+                "mode": "Con repetidos" if not graph_search else "Ignorando repetidos",
                 "time": (end - start) * 1000  # ms
             })
 
@@ -126,11 +126,11 @@ width = 0.35
 
 plt.figure(figsize=(10,6))
 
-bars1 = plt.bar(x - width/2, pivot_mean["Sin repetidos"], width,
-                yerr=pivot_std["Sin repetidos"], capsize=5, label="Búsqueda sin repetidos")
+bars1 = plt.bar(x - width/2, pivot_mean["Con repetidos"], width,
+                yerr=pivot_std["Con repetidos"], capsize=5, label="Con repetidos")
 
-bars2 = plt.bar(x + width/2, pivot_mean["Repetidos"], width,
-                yerr=pivot_std["Repetidos"], capsize=5, label="Búsqueda con repetidos")
+bars2 = plt.bar(x + width/2, pivot_mean["Ignorando repetidos"], width,
+                yerr=pivot_std["Ignorando repetidos"], capsize=5, label="Ignorando repetidos")
 
 plt.xticks(x, pivot_mean.index)
 plt.ylabel("Tiempo promedio (ms)")
