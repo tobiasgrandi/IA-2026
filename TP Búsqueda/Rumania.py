@@ -3,6 +3,7 @@ from simpleai.search.viewers import WebViewer
 import matplotlib.pyplot as plt
 import time
 import numpy as np
+import pandas as pd
 
 GOAL = "Bucharest"
 
@@ -71,12 +72,8 @@ class RomaniaProblem(SearchProblem):
 
 problem = RomaniaProblem(initial_state='Arad')
 viewer = None
-results = {
-    "BFS": [],
-    "DFS": [],
-    "LDFS": [],
-    "ILDFS": []
-}
+N_RUNS = 1000
+results = []
 
 
 for graph_search in [False, True]:
@@ -87,27 +84,56 @@ for graph_search in [False, True]:
     for alg_name, alg in algs.items():
         print(f'{alg_name}, graph_search: {graph_search}')
         if alg_name == 'DFS' and not graph_search:
-            results[alg_name].append(float('inf'))
+            results.append({
+                "algorithm": alg_name,
+                "mode": "Sin repetidos" if not graph_search else "Repetidos",
+                "time": float("inf")
+            })
             continue
-        start = time.perf_counter()
-        result = alg()
-        end = time.perf_counter()
-        results[alg_name].append(end-start)
+        for _ in range(N_RUNS):
+            start = time.perf_counter()
+            result = alg()
+            end = time.perf_counter()
+            results.append({
+                "algorithm": alg_name,
+                "mode": "Sin repetidos" if not graph_search else "Repetidos",
+                "time": (end - start) * 1000  # ms
+            })
 
-algorithms = list(results.keys())
-with_repeated = [results[a][0]*1000 for a in algorithms]
-without_repeated = [results[a][1]*1000 for a in algorithms]
+df = pd.DataFrame(results)
+stats = df.groupby(['algorithm', 'mode'])['time'].agg(
+    mean='mean',
+    std='std',
+    min='min',
+    max='max'
+)
+print(stats)
 
-x = np.arange(len(algorithms))
+pivot_mean = df.pivot_table(
+    index="algorithm",
+    columns="mode",
+    values="time",
+    aggfunc="mean"
+)
+pivot_std = df.pivot_table(
+    index="algorithm",
+    columns="mode",
+    values="time",
+    aggfunc="std"
+)
+x = np.arange(len(pivot_mean.index))
 width = 0.35
 
 plt.figure(figsize=(10,6))
 
-bars1 = plt.bar(x - width/2, with_repeated, width, label="Revisando estados repetidos")
-bars2 = plt.bar(x + width/2, without_repeated, width, label="Sin revisar estados repetidos")
+bars1 = plt.bar(x - width/2, pivot_mean["Sin repetidos"], width,
+                yerr=pivot_std["Sin repetidos"], capsize=5, label="Búsqueda sin repetidos")
 
-plt.xticks(x, algorithms)
-plt.ylabel("Tiempo de ejecución (milisegundos)")
+bars2 = plt.bar(x + width/2, pivot_mean["Repetidos"], width,
+                yerr=pivot_std["Repetidos"], capsize=5, label="Búsqueda con repetidos")
+
+plt.xticks(x, pivot_mean.index)
+plt.ylabel("Tiempo promedio (ms)")
 plt.xlabel("Algoritmo")
 plt.title("Comparación de algoritmos de búsqueda")
 plt.legend()
